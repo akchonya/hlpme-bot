@@ -9,7 +9,7 @@ from aiogram.types import ReplyKeyboardRemove
 from aiogram import html
 
 from ..db.base import collection
-from ..db.register import create_user, update_user
+from ..db.register import update_user
 
 start_router = Router()
 
