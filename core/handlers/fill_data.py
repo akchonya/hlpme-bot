@@ -1,34 +1,30 @@
 import requests
 
+from email_validator import validate_email, EmailNotValidError
 from aiogram import Bot, Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command, StateFilter
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 
-from geopy.geocoders import Nominatim
+from core.utils.states_fill import StatesFill
+from core.keyboards.filldata import share_phone_kb, confirm_fill_ikb
 
-from core.keyboards.share_location import share_location_kb
-from core.utils.states_location import StatesLocation
-from core.db.base import collection
-from core.utils.config import ADMIN_ID
-from core.db.register import update_user
-
-fill_data = Router()
+filldata_router = Router()
 
 
 # Ask user for their location
-@fill_data.message(Command("share_location"))
-async def share_location_handler(message: Message, state: FSMContext):
+@filldata_router.message(Command("fill_data"))
+async def fill_data_handler(message: Message, state: FSMContext):
     await message.answer(
-        "поділіться вашою локацією, будь ласка або натисніть /cancel для відміни",
-        reply_markup=share_location_kb,
+        "введіть повне ім'я у форматі Прізвище Ім'я\nякщо хочете відмінити дію -> /cancel",
+        reply_markup=ReplyKeyboardRemove(),
     )
-    await state.set_state(StatesLocation.GET_LOCATION)
+    await state.set_state(StatesFill.GET_FULLNAME)
 
 
 # Cancellation option
-@fill_data.message(Command("cancel"), StateFilter(StatesLocation))
-@fill_data.message(F.text.casefold() == "cancel", StateFilter(StatesLocation))
+@filldata_router.message(Command("cancel"), StateFilter(StatesFill))
+@filldata_router.message(F.text.casefold() == "cancel", StateFilter(StatesFill))
 async def cancel_handler(message: Message, state: FSMContext) -> None:
     """
     Allow user to cancel any action
@@ -39,62 +35,116 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await message.answer(
-        "ви відмовилися ділитися локацією. повертайтеся ще!",
+        "відмінено. повертайтеся ще!",
         reply_markup=ReplyKeyboardRemove(),
     )
 
 
 # Save coordinates, find the city and ask for confirmation
-@fill_data.message(StatesLocation.GET_LOCATION, F.location)
-async def location_handler(message: Message, state: FSMContext, bot: Bot):
-    latitude = message.location.latitude
-    longitude = message.location.longitude
-    geolocator = Nominatim(user_agent="test_tg_bot")
-    location = geolocator.reverse(f"{latitude},{longitude}")
-    address = location.raw["address"]
-    city = address.get("city", "")
-    request = {
-        "name": "test_name",
-        "description": "test_decs",
-        "dangerLevel": 0,
-        "coordinates": {"latitude": latitude, "longitude": longitude},
-        "accessToken": "string",
-    }
-    response = requests.post(
-        "https://hlp-me-back.onrender.com/local/dangers/create", json=request
-    )
-
-    print(response.status_code)
-    print(response.json())
+@filldata_router.message(
+    StatesFill.GET_FULLNAME,
+    F.text.regexp(
+        "^[А-ЯІЇЄа-яіїє][А-ЯІЇЄа-яіїє']*\s[А-ЯІЇЄа-яіїє][А-ЯІЇЄа-яіїє']*$"
+    ),  # re to check whether the full name is in the right format
+)
+async def get_fullname(message: Message, state: FSMContext, bot: Bot):
+    await state.update_data(full_name=message.text)
     await message.answer(
-        f"координати: {latitude}, {longitude}\n" f"місто: {city}",
-        reply_markup=ReplyKeyboardRemove(),
+        "ім'я записано. введіть email або скористайтеся /cancel для відміни"
     )
-
-    await update_user(
-        user_id=message.from_user.id,
-        username=message.from_user.username,
-        collection=collection,
-        latitude=latitude,
-        longitude=longitude,
-    )
-
-    # await collection.update_one(
-    #     {"user_id": message.from_user.id},
-    #     {"$set": {"latitude": latitude, "longitude": longitude}},
-    # )
-
-    await message.answer_location(latitude=latitude, longitude=longitude)
-    await bot.send_message(
-        ADMIN_ID[0],
-        f"user: {message.from_user.mention_html()}\ncoords: {latitude}, {longitude}\ncity: {city}",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    await state.set_state(StatesFill.GET_EMAIL)
 
 
-@fill_data.message(StatesLocation.GET_LOCATION)
-async def unwanted_location_handler(message: Message, state: FSMContext):
+@filldata_router.message(StatesFill.GET_FULLNAME)
+async def unwanted_fm_handler(message: Message):
     await message.answer(
-        "скористайтеся, будь ласка, кнопкою або натисніть /cancel для відміни",
-        reply_markup=ReplyKeyboardRemove(),
+        "введіть дані у форматі Прізвище Ім'я або /cancel для відміни",
+        parse_mode="HTML",
     )
+
+
+@filldata_router.message(StatesFill.GET_EMAIL, F.text)
+async def get_email(message: Message, state: FSMContext):
+    email = message.text
+
+    # Check email
+    try:
+        emailinfo = validate_email(email, check_deliverability=False)
+        email = emailinfo.normalized
+
+    # Ask for email again on False
+    except EmailNotValidError:
+        await message.answer(
+            "введіть коректний email або натисніть /cancel для відміни"
+        )
+
+        return
+
+    await state.update_data(email=email)
+    await message.answer(
+        "email записано. поділіться номером телефону за допомогою кнопки нижче",
+        reply_markup=share_phone_kb,
+    )
+    await state.set_state(StatesFill.GET_PHONE)
+
+
+@filldata_router.message(StatesFill.GET_PHONE, F.contact)
+async def get_phone_handler(message: Message, state: FSMContext):
+    await state.update_data(phone_number=message.contact.phone_number)
+    context_data = await state.get_data()
+    full_name = context_data.get("full_name")
+    email = context_data.get("email")
+    phone_number = context_data.get("phone_number")
+    await message.answer(
+        "записано! перевірте, будь ласка, дані: \n"
+        f"повне ім'я: {full_name}\n"
+        f"email: {email}\n"
+        f"номер телефону: {phone_number}",
+        reply_markup=confirm_fill_ikb,
+    )
+    await state.set_state(StatesFill.CHECK)
+
+
+@filldata_router.message(StatesFill.GET_PHONE)
+async def unwanted_phone_handler(message: Message, state: FSMContext):
+    await message.answer(
+        "будь ласка, поділіться номером телефону за допомогою кнопки нижче або скористайтеся /cancel для відміни",
+        reply_markup=share_phone_kb,
+    )
+
+
+@filldata_router.callback_query(StatesFill.CHECK)
+async def check_handler(callback: CallbackQuery, state: FSMContext):
+    action = callback.data
+
+    if action == "confirm":
+        context_data = await state.get_data()
+        full_name = context_data.get("full_name")
+        email = context_data.get("email")
+        phone_number = context_data.get("phone_number")
+        await callback.message.answer("записано!", reply_markup=ReplyKeyboardRemove())
+
+        request = {
+            "full_name": full_name,
+            "email": email,
+            "phone_number": phone_number,
+            "username": callback.message.from_user.username,
+            "accessToken": "string",
+        }
+        response = requests.post(
+            "https://hlp-me-back.onrender.com/bot/create/user", json=request
+        )
+
+        print(response.status_code)
+        print(response.json())
+
+        await state.clear()
+        await callback.answer()
+
+    elif action == "decline":
+        await callback.message.answer(
+            "відмінено. можете спробувати ще раз натиснувши /fill_data",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        await state.clear()
+        await callback.answer()
