@@ -15,7 +15,6 @@ filldata_router = Router()
 # Ask user for their location
 @filldata_router.message(Command("fill_data"))
 async def fill_data_handler(message: Message, state: FSMContext):
-    await state.update_data(username=message.from_user.username)
     await message.answer(
         "введіть повне ім'я у форматі Прізвище Ім'я\nякщо хочете відмінити дію -> /cancel",
         reply_markup=ReplyKeyboardRemove(),
@@ -123,14 +122,12 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
         full_name = context_data.get("full_name")
         email = context_data.get("email")
         phone_number = context_data.get("phone_number")
-        username = context_data.get("username")
         await callback.message.answer("записано!", reply_markup=ReplyKeyboardRemove())
 
         request = {
             "full_name": full_name,
             "email": email,
             "phone_number": phone_number,
-            "username": username,
             "accessToken": "string",
         }
         response = requests.post(
