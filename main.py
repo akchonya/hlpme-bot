@@ -13,6 +13,7 @@ from core.handlers.start import start_router
 from core.handlers.profile import profile_router
 from core.handlers.fill_data import filldata_router
 from core.handlers.help_commands import i_need_help_router
+from core.handlers.register import register_router
 from core.utils.config import (
     BASE_WEBHOOK_URL,
     BOT_TOKEN,
@@ -42,7 +43,11 @@ def main() -> None:
     dp = Dispatcher()
     # ... and all other routers should be attached to Dispatcher
     dp.include_routers(
-        start_router, profile_router, filldata_router, i_need_help_router
+        start_router,
+        profile_router,
+        filldata_router,
+        i_need_help_router,
+        register_router,
     )
 
     # Register startup hook to initialize webhook

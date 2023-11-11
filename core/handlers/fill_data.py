@@ -122,13 +122,18 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
         full_name = context_data.get("full_name")
         email = context_data.get("email")
         phone_number = context_data.get("phone_number")
+        user_id = callback.from_user.id
+        username = callback.from_user.username
+        first_name = callback.from_user.first_name
         await callback.message.answer("записано!", reply_markup=ReplyKeyboardRemove())
 
         request = {
+            "user_id": user_id,
+            "username": username,
+            "first_name": first_name,
             "full_name": full_name,
             "email": email,
             "phone_number": phone_number,
-            "accessToken": "string",
         }
         response = requests.post(
             "https://hlp-me-back.onrender.com/bot/create/user", json=request
