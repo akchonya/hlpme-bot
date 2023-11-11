@@ -8,9 +8,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
+from core.utils.commands import set_commands
 from core.handlers.start import start_router
 from core.handlers.profile import profile_router
 from core.handlers.fill_data import filldata_router
+from core.handlers.help_commands import i_need_help_router
 from core.utils.config import (
     BASE_WEBHOOK_URL,
     BOT_TOKEN,
@@ -19,11 +21,13 @@ from core.utils.config import (
     WEBHOOK_SECRET,
 )
 
+
 # Path to webhook route, on which Telegram will send requests
 WEBHOOK_PATH = "/webhook"
 
 
 async def on_startup(bot: Bot) -> None:
+    await set_commands(bot)
     # If you have a self-signed SSL certificate, then you will need to send a public
     # certificate to Telegram
     await bot.set_webhook(
@@ -37,7 +41,9 @@ def main() -> None:
     # Dispatcher is a root router
     dp = Dispatcher()
     # ... and all other routers should be attached to Dispatcher
-    dp.include_routers(start_router, profile_router, filldata_router)
+    dp.include_routers(
+        start_router, profile_router, filldata_router, i_need_help_router
+    )
 
     # Register startup hook to initialize webhook
     dp.startup.register(on_startup)

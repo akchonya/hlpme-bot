@@ -149,6 +149,6 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
 
 
-@filldata_router.callback_query()
-async def unwanted_callback_handler(callback: CallbackQuery):
-    await callback.answer()
+# @filldata_router.callback_query()
+# async def unwanted_callback_handler(callback: CallbackQuery):
+#     await callback.answer()
