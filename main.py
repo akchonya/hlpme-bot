@@ -9,6 +9,8 @@ from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 from core.handlers.start import start_router
+from core.handlers.profile import profile_router
+from core.handlers.share_location import share_location
 from core.utils.config import (
     BASE_WEBHOOK_URL,
     BOT_TOKEN,
@@ -33,7 +35,7 @@ def main() -> None:
     # Dispatcher is a root router
     dp = Dispatcher()
     # ... and all other routers should be attached to Dispatcher
-    dp.include_routers(start_router)
+    dp.include_routers(start_router, profile_router, share_location)
 
     # Register startup hook to initialize webhook
     dp.startup.register(on_startup)

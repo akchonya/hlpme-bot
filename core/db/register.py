@@ -17,8 +17,24 @@ async def create_user(user_id: int, username: str, collection: Collection) -> No
     )
 
 
-async def update_user(user_id: int, username: str, collection: Collection) -> None:
-    # update 'data' if 'name' exists otherwise insert new document
+async def update_user(
+    user_id: int,
+    username: str,
+    collection: Collection,
+    latitude="not_shared",
+    longitude="not_shared",
+    city="not_shared",
+) -> None:
+    # update data if "user_id" exists otherwise insert new document
     collection.find_one_and_update(
-        {"user_id": user_id}, {"$set": {"username": username}}, upsert=True
+        {"user_id": user_id},
+        {
+            "$set": {
+                "username": username,
+                "latitude": latitude,
+                "longitude": longitude,
+                "city": city,
+            }
+        },
+        upsert=True,
     )

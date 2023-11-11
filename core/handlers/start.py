@@ -3,10 +3,9 @@
 """
 
 
-from aiogram import Router, types
+from aiogram import Router, html, types
 from aiogram.filters import CommandStart
 from aiogram.types import ReplyKeyboardRemove
-from aiogram import html
 
 from ..db.base import collection
 from ..db.register import update_user
