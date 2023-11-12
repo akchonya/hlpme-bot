@@ -135,8 +135,10 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
             "email": email,
             "phone_number": phone_number,
         }
-        response = requests.post(
-            "https://hlp-me-back.onrender.com/bot/create/user", json=request
+
+        print(f"put request: \n{request}")
+        response = requests.put(
+            "https://hlp-me-back.onrender.com/tg/update", json=request
         )
 
         print(response.status_code)

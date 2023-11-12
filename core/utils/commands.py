@@ -6,7 +6,8 @@ user_commands = [
     BotCommand(command="start", description="розпочати роботу"),
     BotCommand(command="fill_data", description="заповнити дані"),
     BotCommand(command="i_need_help", description="подати запит на допомогу"),
-    BotCommand(command="help_requests", description="переглянути активні запити"),
+    BotCommand(command="active_helps", description="переглянути активні запити"),
+    BotCommand(command="profile", description="ваш профіль"),
 ]
 
 

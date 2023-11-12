@@ -1,19 +1,15 @@
-import requests
-
 from datetime import datetime
 
-from aiogram import Router, F
-from aiogram.fsm.context import FSMContext
+import requests
+from aiogram import F, Router
 from aiogram.filters import Command, StateFilter
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
-
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from geopy.geocoders import Nominatim
 
-from core.keyboards.needhelp import share_location_kb, confirm_help_ikb
+from core.keyboards.needhelp import confirm_help_ikb, share_location_kb
 from core.utils.states_location import StatesNeedHelp
 
-
-share_location = Router()
 i_need_help_router = Router()
 
 
@@ -28,6 +24,24 @@ async def need_help_handler(message: Message, state: FSMContext):
         reply_markup=ReplyKeyboardRemove(),
     )
     await state.set_state(StatesNeedHelp.GET_CAPTION)
+
+
+# Cancellation option
+@i_need_help_router.message(Command("cancel"), StateFilter(StatesNeedHelp))
+@i_need_help_router.message(F.text.casefold() == "cancel", StateFilter(StatesNeedHelp))
+async def cancel_handler(message: Message, state: FSMContext) -> None:
+    """
+    Allow user to cancel any action
+    """
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+
+    await state.clear()
+    await message.answer(
+        "створення запиту відмінено!",
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 @i_need_help_router.message(StatesNeedHelp.GET_CAPTION, F.text)
@@ -70,7 +84,8 @@ async def get_location(message: Message, state: FSMContext):
     await state.update_data(latitude=message.location.latitude)
     await state.update_data(longitude=message.location.longitude)
     await message.answer(
-        "записано. вкажіть день, на який вам потрібна допомога у форматі дд-мм-рррр:"
+        "записано. вкажіть день, на який вам потрібна допомога у форматі дд-мм-рррр:",
+        reply_markup=ReplyKeyboardRemove(),
     )
     await state.set_state(StatesNeedHelp.GET_DATE)
 
@@ -130,14 +145,15 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
         context = await state.get_data()
         caption = context.get("caption")
         description = context.get("description")
-        date = context.get("date")
+        date_time = context.get("date")
         latitude = context.get("latitude")
         longitude = context.get("longitude")
 
         request = {
+            "user_id": callback.from_user.id,
             "name": caption,
             "description": description,
-            "time": date,
+            "date_time": date_time,
             "coordinates": {"latitude": latitude, "longitude": longitude},
             "accessToken": "string",
         }
@@ -166,21 +182,3 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
 # @i_need_help_router.callback_query()
 # async def unwanted_callback_handler(callback: CallbackQuery):
 #     await callback.answer()
-
-
-# Cancellation option
-@i_need_help_router.message(Command("cancel"), StateFilter(StatesNeedHelp))
-@i_need_help_router.message(F.text.casefold() == "cancel", StateFilter(StatesNeedHelp))
-async def cancel_handler(message: Message, state: FSMContext) -> None:
-    """
-    Allow user to cancel any action
-    """
-    current_state = await state.get_state()
-    if current_state is None:
-        return
-
-    await state.clear()
-    await message.answer(
-        "створення запиту відмінено!",
-        reply_markup=ReplyKeyboardRemove(),
-    )

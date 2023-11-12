@@ -23,11 +23,13 @@ async def msg_handler(message: Message):
         "phone_number": empty,
     }
 
-    print(request)
-
-    # response = requests.post("https://hlp-me-back.onrender.com/{path}", json=request)
-    # print(response.status_code)
-    # print(response.json())
+    print("posting response")
+    print(f"request is {request}")
+    response = requests.post(
+        "https://hlp-me-back.onrender.com/tg/register", json=request
+    )
+    print(response.status_code)
+    print(response.json())
 
     await message.answer(
         "дякую, ви успішно авторизувалися!\nможете дозаповнити інформацію за допомогою /fill_data",
