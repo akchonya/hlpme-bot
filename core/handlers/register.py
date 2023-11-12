@@ -8,7 +8,7 @@ register_router = Router()
 
 
 @register_router.message(F.connected_website)
-async def msg_handler(message: Message):
+async def register_handler(message: Message):
     user_id = message.from_user.id
     username = message.from_user.username
     first_name = message.from_user.first_name
@@ -23,12 +23,20 @@ async def msg_handler(message: Message):
         "phone_number": empty,
     }
 
-    print("posting response")
-    print(f"request is {request}")
     response = requests.post(
         "https://hlp-me-back.onrender.com/tg/register", json=request
     )
-    print(response.status_code)
+    status = int(response.status_code)
+
+    print(status)
+
+    if status == 400:
+        await message.answer(
+            "❕ ви вже були авторизовані!\nможете дозаповнити інформацію за допомогою /fill_data",
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        return
+
     print(response.json())
 
     await message.answer(
