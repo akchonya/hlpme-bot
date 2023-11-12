@@ -16,7 +16,7 @@ filldata_router = Router()
 @filldata_router.message(Command("fill_data"))
 async def fill_data_handler(message: Message, state: FSMContext):
     await message.answer(
-        "введіть повне ім'я у форматі Прізвище Ім'я\nякщо хочете відмінити дію -> /cancel",
+        "✏️ введіть повне ім'я у форматі Прізвище Ім'я\nякщо хочете відмінити дію -> /cancel",
         reply_markup=ReplyKeyboardRemove(),
     )
     await state.set_state(StatesFill.GET_FULLNAME)
@@ -35,7 +35,7 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await message.answer(
-        "відмінено. повертайтеся ще!",
+        "🔴 відмінено. повертайтеся ще!",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -50,7 +50,7 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 async def get_fullname(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(full_name=message.text)
     await message.answer(
-        "ім'я записано. введіть email або скористайтеся /cancel для відміни"
+        "✔️ ім'я записано. введіть email або скористайтеся /cancel для відміни"
     )
     await state.set_state(StatesFill.GET_EMAIL)
 
@@ -58,7 +58,7 @@ async def get_fullname(message: Message, state: FSMContext, bot: Bot):
 @filldata_router.message(StatesFill.GET_FULLNAME)
 async def unwanted_fm_handler(message: Message):
     await message.answer(
-        "введіть дані у форматі Прізвище Ім'я або /cancel для відміни",
+        "⚠️ введіть дані у форматі Прізвище Ім'я або /cancel для відміни",
         parse_mode="HTML",
     )
 
@@ -75,14 +75,14 @@ async def get_email(message: Message, state: FSMContext):
     # Ask for email again on False
     except EmailNotValidError:
         await message.answer(
-            "введіть коректний email або натисніть /cancel для відміни"
+            "⚠️ введіть коректний email або натисніть /cancel для відміни"
         )
 
         return
 
     await state.update_data(email=email)
     await message.answer(
-        "email записано. поділіться номером телефону за допомогою кнопки нижче",
+        "✔️ email записано. поділіться номером телефону за допомогою кнопки нижче",
         reply_markup=share_phone_kb,
     )
     await state.set_state(StatesFill.GET_PHONE)
@@ -96,7 +96,7 @@ async def get_phone_handler(message: Message, state: FSMContext):
     email = context_data.get("email")
     phone_number = context_data.get("phone_number")
     await message.answer(
-        "записано! перевірте, будь ласка, дані: \n"
+        "✔️ записано! перевірте, будь ласка, дані: \n"
         f"повне ім'я: {full_name}\n"
         f"email: {email}\n"
         f"номер телефону: {phone_number}",
@@ -108,7 +108,7 @@ async def get_phone_handler(message: Message, state: FSMContext):
 @filldata_router.message(StatesFill.GET_PHONE)
 async def unwanted_phone_handler(message: Message, state: FSMContext):
     await message.answer(
-        "будь ласка, поділіться номером телефону за допомогою кнопки нижче або скористайтеся /cancel для відміни",
+        "✏️ будь ласка, поділіться номером телефону за допомогою кнопки нижче або скористайтеся /cancel для відміни",
         reply_markup=share_phone_kb,
     )
 
@@ -149,7 +149,7 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
 
     elif action == "decline":
         await callback.message.answer(
-            "відмінено. можете спробувати ще раз натиснувши /fill_data",
+            "🔴 відмінено. можете спробувати ще раз натиснувши /fill_data",
             reply_markup=ReplyKeyboardRemove(),
         )
         await state.clear()

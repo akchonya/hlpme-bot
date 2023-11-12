@@ -17,10 +17,10 @@ i_need_help_router = Router()
 async def need_help_handler(message: Message, state: FSMContext):
     await message.answer(
         "якщо ви потребуєте допомоги - введіть запит.\n\n"
-        "зауважте, що разом із запитом передасться і ваша поточна інформація."
+        "❕ зауважте, що разом із запитом передасться і ваша поточна інформація."
         "тому, якщо ви ще не заповнили додаткові дані - скористайтеся /fill_data\n\n"
         "натисніть /cancel для відміни\n\n"
-        "будь ласка, зауважте, що тут подати запит можна виключно з мобільного пристрою",
+        "✏️ подати запит можна виключно з мобільного пристрою. для створення запиту з пк - скористайтеся сайтом",
         reply_markup=ReplyKeyboardRemove(),
     )
     await state.set_state(StatesNeedHelp.GET_CAPTION)
@@ -39,7 +39,7 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await message.answer(
-        "створення запиту відмінено!",
+        "🔴 створення запиту відмінено!",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -48,7 +48,7 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 async def get_help_caption_handler(message: Message, state: FSMContext):
     await state.update_data(caption=message.text)
     await message.answer(
-        "опишіть свою проблему або натисніть /skip якщо не хочете надавати підробиць"
+        "✏️ опишіть свою проблему або натисніть /skip якщо не хочете надавати підробиць"
     )
     await state.set_state(StatesNeedHelp.GET_DESCRIPTION)
 
@@ -56,27 +56,31 @@ async def get_help_caption_handler(message: Message, state: FSMContext):
 @i_need_help_router.message(StatesNeedHelp.GET_CAPTION)
 async def unwanted_help_caption_handler(message: Message):
     await message.answer(
-        "введіть текстом або пропустіть командою /skip\n.якщо хочете відмінити - /cancel"
+        "⚠️ введіть текстом або пропустіть командою /skip\n.якщо хочете відмінити - /cancel"
     )
 
 
 @i_need_help_router.message(StatesNeedHelp.GET_DESCRIPTION, Command("skip"))
 async def skip_description(message: Message, state: FSMContext):
     await state.update_data(description="деталі відсутні.")
-    await message.answer("добре, поділіться локацією:", reply_markup=share_location_kb)
+    await message.answer(
+        "✏️ добре, поділіться локацією:", reply_markup=share_location_kb
+    )
     await state.set_state(StatesNeedHelp.GET_LOCATION)
 
 
 @i_need_help_router.message(StatesNeedHelp.GET_DESCRIPTION, F.text)
 async def get_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
-    await message.answer("добре, поділіться локацією:", reply_markup=share_location_kb)
+    await message.answer(
+        "✏️ добре, поділіться локацією:", reply_markup=share_location_kb
+    )
     await state.set_state(StatesNeedHelp.GET_LOCATION)
 
 
 @i_need_help_router.message(StatesNeedHelp.GET_DESCRIPTION)
 async def unwanted_description(message: Message):
-    await message.answer("введіть коректні текстові дані")
+    await message.answer("⚠️ введіть коректні текстові дані")
 
 
 @i_need_help_router.message(StatesNeedHelp.GET_LOCATION, F.location)
@@ -84,7 +88,7 @@ async def get_location(message: Message, state: FSMContext):
     await state.update_data(latitude=message.location.latitude)
     await state.update_data(longitude=message.location.longitude)
     await message.answer(
-        "записано. вкажіть день, на який вам потрібна допомога у форматі дд-мм-рррр:",
+        "✔️ записано. вкажіть день, на який вам потрібна допомога у форматі дд-мм-рррр:",
         reply_markup=ReplyKeyboardRemove(),
     )
     await state.set_state(StatesNeedHelp.GET_DATE)
@@ -93,7 +97,7 @@ async def get_location(message: Message, state: FSMContext):
 @i_need_help_router.message(StatesNeedHelp.GET_LOCATION)
 async def unwanted_location(message: Message, state: FSMContext):
     await message.reply(
-        "будь ласка, скористайтеся клавіатурою для подання локації "
+        "⚠️ будь ласка, скористайтеся клавіатурою для подання локації "
         "або натисніть /cancel для відміни.\n\n"
         "якщо ви з пристрою, який не підтримує цю функцію - спробуйте "
         "подати запит на нашому сайті {лінк_на_сайт}"
@@ -108,7 +112,7 @@ async def get_date_handler(message: Message, state: FSMContext):
         date_object = str(datetime.strptime(date_text, "%d-%m-%Y"))
     except ValueError:
         await message.answer(
-            "введіть дату у форматі дд-мм-рррр", reply_markup=ReplyKeyboardRemove()
+            "⚠️ введіть дату у форматі дд-мм-рррр", reply_markup=ReplyKeyboardRemove()
         )
         return
     await state.update_data(date=date_object)
@@ -126,7 +130,7 @@ async def get_date_handler(message: Message, state: FSMContext):
     city = address.get("city", "")
 
     await message.answer(
-        "записано! перевірте, будь ласка, дані:\n"
+        "✔️ записано! перевірте, будь ласка, дані:\n"
         f"проблема: {caption}\n"
         f"опис: {description}\n"
         f"місто: {city}\n"
@@ -162,7 +166,7 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
         )
 
         await callback.message.answer(
-            "запит додано!", reply_markup=ReplyKeyboardRemove()
+            "✅ запит додано!", reply_markup=ReplyKeyboardRemove()
         )
         print(response.status_code)
         print(response.json())
@@ -172,7 +176,7 @@ async def check_handler(callback: CallbackQuery, state: FSMContext):
 
     elif action == "help_decline":
         await callback.message.answer(
-            "відмінено. можете спробувати ще раз натиснувши /i_need_help",
+            "🔴 відмінено. можете спробувати ще раз натиснувши /i_need_help",
             reply_markup=ReplyKeyboardRemove(),
         )
         await state.clear()

@@ -13,6 +13,6 @@ start_router = Router()
 @start_router.message(CommandStart())
 async def start_handler(message: types.Message):
     await message.answer(
-        f"добрий день! це ботік від команди {html.bold('💅🏻slay devs💅🏻')}",
+        f"🎍 добрий день! це ботік від команди {html.bold('💅🏻slay devs💅🏻')}",
         reply_markup=ReplyKeyboardRemove(),
     )

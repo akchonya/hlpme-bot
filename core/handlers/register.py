@@ -32,6 +32,6 @@ async def msg_handler(message: Message):
     print(response.json())
 
     await message.answer(
-        "дякую, ви успішно авторизувалися!\nможете дозаповнити інформацію за допомогою /fill_data",
+        "✅ дякую, ви успішно авторизувалися!\nможете дозаповнити інформацію за допомогою /fill_data",
         reply_markup=ReplyKeyboardRemove(),
     )

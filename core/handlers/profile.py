@@ -11,6 +11,7 @@ profile_router = Router()
 
 user_ads = {}
 user_ads_names = {}
+user_ads_names_delete = {}
 
 
 @profile_router.message(Command("profile"))
@@ -36,6 +37,7 @@ async def profile_handler(message: types.Message):
     helps_responce = requests.get(
         f"https://hlp-me-back.onrender.com/local/dangers/my/{user_id}"
     )
+
     helps_responce_status = int(helps_responce.status_code)
     print(helps_responce_status)
     if helps_responce_status == 500:
@@ -49,13 +51,13 @@ async def profile_handler(message: types.Message):
     user_ads[user_id] = helps_responce
 
     if len(helps_responce) == 0:
-        helps = "ви поки не створювали запити на допомогу.\nдля цього скористайтеся /i_need_help"
+        helps = "❕ ви поки не створювали запити на допомогу.\nдля цього скористайтеся /i_need_help"
     else:
         helps = f"🟢 {html.bold('ваші активні запити на допомогу')}:\n"
         for i in range(len(helps_responce)):
             help = helps_responce[i]
             helps += f"{i+1}. {help['name']}\n"
-        helps += "ви можете видалити запит за допомогою команди /delete"
+        helps += "\n✏️ ви можете видалити запит за допомогою команди /delete"
     await message.answer(profile + helps, reply_markup=ReplyKeyboardRemove())
 
 
@@ -81,7 +83,8 @@ async def delete_help_handler(message: Message, state: FSMContext):
 
     if not len(helps_responce):
         await message.answer(
-            "ви ще не створили запитів на допомогу.", reply_markup=ReplyKeyboardRemove()
+            "❕ ви ще не створили запитів на допомогу.",
+            reply_markup=ReplyKeyboardRemove(),
         )
     else:
         helps = []
@@ -91,7 +94,7 @@ async def delete_help_handler(message: Message, state: FSMContext):
         user_ads_names[user_id] = helps
 
         kb = await delete_help(names=helps)
-        await message.answer("оберіть з переліку нижче або /cancel", reply_markup=kb)
+        await message.answer("✏️ оберіть з переліку нижче або /cancel", reply_markup=kb)
         await state.set_state(StatesDelete.GET_HELP)
 
 
@@ -108,7 +111,7 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await message.answer(
-        "відмінено. повертайтеся ще!",
+        "🔴 відмінено. повертайтеся ще!",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -117,27 +120,43 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 async def get_help_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
     if message.text not in user_ads_names[user_id]:
-        await message.answer("оберіть зі списку або відмініть /cancel")
+        await message.answer("✏️ оберіть зі списку або відмініть /cancel")
     else:
         await message.answer(
-            f"{html.bold('перевірте дані')}:\nви видаляєте {html.underline(message.text)}\nпідтверджуєте?",
+            f"{html.bold('📝 перевірте дані')}:\nви видаляєте {html.underline(message.text)}\nпідтверджуєте?",
             reply_markup=confirm_delete_ikb,
         )
+        await state.update_data(name=message.text)
         print("TO DELETE CHECK")
+        user_ads_names_delete[user_id] = message.text
     await state.set_state(StatesDelete.CONFIRM)
 
 
 @profile_router.callback_query(StatesDelete.CONFIRM)
 async def confirm_delete_handler(callback: CallbackQuery, state: FSMContext):
     action = callback.data
-
+    print(user_ads_names_delete[callback.from_user.id])
     if action == "delete_confirm":
-        print("DELETED")
+        context_data = await state.get_data()
+        name = context_data.get("name")
+
+        my_user_ads = user_ads[callback.from_user.id]
+        for item in my_user_ads:
+            if item["name"] == name:
+                id = item["_id"]
+        response = requests.delete(
+            f"https://hlp-me-back.onrender.com/local/dangers/delete/{id}"
+        )
+        print(response.status_code)
+        print(response.json())
+        await callback.message.answer(
+            "✅ успішно видалено", reply_markup=ReplyKeyboardRemove()
+        )
         await callback.answer()
 
     elif action == "delete_decline":
         await callback.message.answer(
-            "відмінено. можете спробувати ще раз натиснувши /delete",
+            "🔴 відмінено. можете спробувати ще раз натиснувши /delete",
             reply_markup=ReplyKeyboardRemove(),
         )
         await state.clear()
