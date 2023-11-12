@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import requests
-from aiogram import F, Router
+from aiogram import F, Router, html
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
@@ -100,7 +100,7 @@ async def unwanted_location(message: Message, state: FSMContext):
         "⚠️ будь ласка, скористайтеся клавіатурою для подання локації "
         "або натисніть /cancel для відміни.\n\n"
         "якщо ви з пристрою, який не підтримує цю функцію - спробуйте "
-        "подати запит на нашому сайті {лінк_на_сайт}"
+        f"подати запит на нашому сайті {html.link('на нашому сайті', 'https://hlpme.online/')}"
     )
 
 
