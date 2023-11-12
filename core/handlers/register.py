@@ -1,4 +1,4 @@
-import requests
+import requests  # noqa
 
 from aiogram import Router, F
 from aiogram.types import Message
@@ -23,10 +23,13 @@ async def msg_handler(message: Message):
         "phone_number": empty,
     }
 
-    response = requests.post("https://hlp-me-back.onrender.com/{path}", json=request)
-    print(response.status_code)
-    print(response.json())
+    print(request)
+
+    # response = requests.post("https://hlp-me-back.onrender.com/{path}", json=request)
+    # print(response.status_code)
+    # print(response.json())
 
     await message.answer(
-        "дякую, вас успішно зареєстровано!", reply_markup=ReplyKeyboardRemove()
+        "дякую, ви успішно авторизувалися!\nможете дозаповнити інформацію за допомогою /fill_data",
+        reply_markup=ReplyKeyboardRemove(),
     )
